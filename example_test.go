@@ -60,11 +60,23 @@ func TestExampleUsage(t *testing.T) {
 			details GoBinaryReportDetails
 		}{
 			{
-				name: "FIPS_ready_binary",
+				name: "FIPS_ready_binary_systemcrypto",
 				details: GoBinaryReportDetails{
 					GoVersion:        "go1.24.6 X:systemcrypto",
 					Module:           "example.com/app",
 					UseSystemcrypto:  true,
+					UseOpensslNoCGO:  false,
+					CGOEnabled:       true,
+					FailsOnFIPSCheck: false,
+				},
+			},
+			{
+				name: "FIPS_ready_binary_ms_nocgo_opensslcrypto",
+				details: GoBinaryReportDetails{
+					GoVersion:        "go1.24.6 X:systemcrypto",
+					Module:           "example.com/app",
+					UseSystemcrypto:  false,
+					UseOpensslNoCGO:  true,
 					CGOEnabled:       true,
 					FailsOnFIPSCheck: false,
 				},
@@ -75,6 +87,7 @@ func TestExampleUsage(t *testing.T) {
 					GoVersion:        "go1.21.0",
 					Module:           "example.com/old-app",
 					UseSystemcrypto:  false,
+					UseOpensslNoCGO:  false,
 					CGOEnabled:       true,
 					FailsOnFIPSCheck: false,
 				},
@@ -87,6 +100,7 @@ func TestExampleUsage(t *testing.T) {
 			t.Logf("Example Compliance Check - %s:", example.name)
 			t.Logf("  Go Version: %s", example.details.GoVersion)
 			t.Logf("  Uses Systemcrypto: %t", example.details.UseSystemcrypto)
+			t.Logf("  Uses OpensslNoCGO: %t", example.details.UseOpensslNoCGO)
 			t.Logf("  CGO Enabled: %t", example.details.CGOEnabled)
 			t.Logf("  Runtime Check Passes: %t", !example.details.FailsOnFIPSCheck)
 			t.Logf("  Host FIPS Capable: %t", hostInfo.FIPSCapable)
@@ -237,6 +251,7 @@ func TestExampleDockerImage(t *testing.T) {
 			t.Logf("Binary: %s", report.RelativePath)
 			t.Logf("  Go Version: %s", report.GoBinaryDetails.GoVersion)
 			t.Logf("  Uses Systemcrypto: %t", report.GoBinaryDetails.UseSystemcrypto)
+			t.Logf("  CGO Enabled: %t", report.GoBinaryDetails.CGOEnabled)
 			t.Logf("  FIPS Compliant: %t", isCompliant)
 		}
 	})
@@ -300,6 +315,7 @@ func TestExampleDockerImage(t *testing.T) {
 			t.Logf("    Go Version: %s", report.GoBinaryDetails.GoVersion)
 			t.Logf("    Module: %s", report.GoBinaryDetails.Module)
 			t.Logf("    Uses Systemcrypto: %t", report.GoBinaryDetails.UseSystemcrypto)
+			t.Logf("    Uses OpensslNoCGO: %t", report.GoBinaryDetails.UseOpensslNoCGO)
 			t.Logf("    CGO Enabled: %t", report.GoBinaryDetails.CGOEnabled)
 			t.Logf("    Fails FIPS Check: %t", report.GoBinaryDetails.FailsOnFIPSCheck)
 
@@ -310,8 +326,8 @@ func TestExampleDockerImage(t *testing.T) {
 				t.Logf("    ❌ FIPS Status: NOT COMPLIANT")
 				// Explain why it's not compliant
 				t.Logf("    → Reasons for non-compliance:")
-				if !report.GoBinaryDetails.UseSystemcrypto {
-					t.Logf("      - Missing GOEXPERIMENT=systemcrypto")
+				if !report.GoBinaryDetails.UseSystemcrypto && !report.GoBinaryDetails.UseOpensslNoCGO {
+					t.Logf("      - Missing GOEXPERIMENT=systemcrypto or GOEXPERIMENT=ms_nocgo_opensslcrypto")
 				}
 				if report.GoBinaryDetails.FailsOnFIPSCheck {
 					t.Logf("      - Runtime FIPS check failed")

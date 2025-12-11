@@ -25,16 +25,17 @@ func TestCheckHostFIPS(t *testing.T) {
 
 func TestIsBinaryFIPSCompliant(t *testing.T) {
 	tests := []struct {
-		name           string
-		details        GoBinaryReportDetails
-		hostCapable    bool
-		expected       bool
-		description    string
+		name        string
+		details     GoBinaryReportDetails
+		hostCapable bool
+		expected    bool
+		description string
 	}{
 		{
-			name: "fully_compliant",
+			name: "fully_compliant_systemcrypto",
 			details: GoBinaryReportDetails{
 				UseSystemcrypto:  true,
+				UseOpensslNoCGO:  false,
 				CGOEnabled:       true,
 				FailsOnFIPSCheck: false,
 			},
@@ -43,15 +44,28 @@ func TestIsBinaryFIPSCompliant(t *testing.T) {
 			description: "Binary with systemcrypto, passes runtime, host capable",
 		},
 		{
-			name: "no_systemcrypto",
+			name: "fully_compliant_ms_nocgo_opensslcrypto",
 			details: GoBinaryReportDetails{
 				UseSystemcrypto:  false,
+				UseOpensslNoCGO:  true,
+				CGOEnabled:       true,
+				FailsOnFIPSCheck: false,
+			},
+			hostCapable: true,
+			expected:    true,
+			description: "Binary with ms_nocgo_opensslcrypto, passes runtime, host capable",
+		},
+		{
+			name: "no_systemcrypto_or_ms_nocgo_opensslcrypto",
+			details: GoBinaryReportDetails{
+				UseSystemcrypto:  false,
+				UseOpensslNoCGO:  false,
 				CGOEnabled:       true,
 				FailsOnFIPSCheck: false,
 			},
 			hostCapable: true,
 			expected:    false,
-			description: "Binary without systemcrypto",
+			description: "Binary without systemcrypto or ms_nocgo_opensslcrypto",
 		},
 		{
 			name: "runtime_fails",
@@ -79,6 +93,7 @@ func TestIsBinaryFIPSCompliant(t *testing.T) {
 			name: "multiple_issues",
 			details: GoBinaryReportDetails{
 				UseSystemcrypto:  false,
+				UseOpensslNoCGO:  false,
 				CGOEnabled:       false,
 				FailsOnFIPSCheck: true,
 			},
@@ -126,7 +141,6 @@ func TestCheckBinariesWithNonExistentPath(t *testing.T) {
 
 	nonExistentPath := "/path/that/definitely/does/not/exist"
 	reports, err := CheckBinaries(ctx, nonExistentPath)
-
 	// Should handle non-existent paths gracefully
 	if err != nil {
 		t.Logf("Expected error for non-existent path: %v", err)
@@ -163,6 +177,7 @@ func TestBinaryReportStructure(t *testing.T) {
 			GoVersion:        "go1.24.6 X:systemcrypto",
 			Module:           "github.com/example/test",
 			UseSystemcrypto:  true,
+			UseOpensslNoCGO:  true,
 			CGOEnabled:       true,
 			FailsOnFIPSCheck: false,
 			RuntimePanicLog:  "",
@@ -182,6 +197,9 @@ func TestBinaryReportStructure(t *testing.T) {
 	}
 	if !report.GoBinaryDetails.UseSystemcrypto {
 		t.Error("GoBinaryDetails.UseSystemcrypto field not working")
+	}
+	if !report.GoBinaryDetails.UseOpensslNoCGO {
+		t.Error("GoBinaryDetails.UseOpensslNoCGO field not working")
 	}
 }
 
@@ -257,7 +275,7 @@ func TestIntegrationWithRealBinary(t *testing.T) {
 	}
 
 	// Make it executable
-	if err := os.Chmod(testBinary, 0755); err != nil {
+	if err := os.Chmod(testBinary, 0o755); err != nil {
 		t.Fatalf("Failed to make binary executable: %v", err)
 	}
 
@@ -288,5 +306,5 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(dst, input, 0644)
+	return os.WriteFile(dst, input, 0o644)
 }

@@ -19,6 +19,7 @@ type GoBinaryReportDetails struct {
 	GoVersion        string
 	Module           string
 	UseSystemcrypto  bool
+	UseOpensslNoCGO  bool
 	CGOEnabled       bool
 	FailsOnFIPSCheck bool   // Indicates if the binary fails when run with GOFIPS=1
 	RuntimePanicLog  string // Captures the panic log from runtime FIPS check
@@ -77,7 +78,6 @@ func Check(ctx context.Context, path string) ([]BinaryReport, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("error walking directory tree: %w", err)
 	}
@@ -156,7 +156,7 @@ func isBinary(filePath string) bool {
 	}
 
 	// Check if file has executable permission
-	if info.Mode()&0111 == 0 {
+	if info.Mode()&0o111 == 0 {
 		return false
 	}
 
@@ -233,6 +233,9 @@ func checkGoBinaryFIPS(ctx context.Context, filePath string) (GoBinaryReportDeta
 			// Check if systemcrypto experiment is enabled
 			if strings.Contains(setting.Value, "systemcrypto") {
 				details.UseSystemcrypto = true
+			}
+			if strings.Contains(setting.Value, "ms_nocgo_opensslcrypto") {
+				details.UseOpensslNoCGO = true
 			}
 		}
 	}

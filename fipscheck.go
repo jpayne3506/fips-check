@@ -30,11 +30,11 @@ type GoBinaryReportDetails struct {
 	GoVersion        string
 	Module           string
 	UseSystemcrypto  bool
+	UseOpensslNoCGO  bool
 	CGOEnabled       bool
 	FailsOnFIPSCheck bool   // Indicates if the binary fails when run with GOFIPS=1
 	RuntimePanicLog  string // Captures the panic log from runtime FIPS check
 }
-
 
 // CheckBinaries recursively scans the filesystem starting from the given path
 // and checks all binaries for FIPS compliance in parallel.
@@ -55,6 +55,7 @@ func CheckBinaries(ctx context.Context, path string) ([]BinaryReport, error) {
 				GoVersion:        report.GoBinaryDetails.GoVersion,
 				Module:           report.GoBinaryDetails.Module,
 				UseSystemcrypto:  report.GoBinaryDetails.UseSystemcrypto,
+				UseOpensslNoCGO:  report.GoBinaryDetails.UseOpensslNoCGO,
 				CGOEnabled:       report.GoBinaryDetails.CGOEnabled,
 				FailsOnFIPSCheck: report.GoBinaryDetails.FailsOnFIPSCheck,
 				RuntimePanicLog:  report.GoBinaryDetails.RuntimePanicLog,
@@ -81,14 +82,13 @@ func CheckHostFIPS() HostFIPSInfo {
 	}
 }
 
-
 // IsBinaryFIPSCompliant determines if a binary is FIPS compliant based on the report details.
 // A binary is considered FIPS compliant if:
 // - It uses systemcrypto (GOEXPERIMENT=systemcrypto)
 // - It doesn't fail the runtime FIPS check
 // - The host system is FIPS capable
 func IsBinaryFIPSCompliant(details GoBinaryReportDetails, hostFIPSCapable bool) bool {
-	if !details.UseSystemcrypto {
+	if !details.UseSystemcrypto && !details.UseOpensslNoCGO {
 		return false
 	}
 	if details.FailsOnFIPSCheck {

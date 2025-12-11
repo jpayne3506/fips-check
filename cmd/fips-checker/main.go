@@ -44,10 +44,14 @@ func printReports(reports []binarychecker.BinaryReport) {
 
 	// Count statistics
 	systemcryptoCount := 0
+	opensslNoCGOCount := 0
 	failedCount := 0
 	for _, report := range reports {
 		if report.GoBinaryDetails.UseSystemcrypto {
 			systemcryptoCount++
+		}
+		if report.GoBinaryDetails.UseOpensslNoCGO {
+			opensslNoCGOCount++
 		}
 		if report.GoBinaryDetails.FailsOnFIPSCheck {
 			failedCount++
@@ -55,6 +59,7 @@ func printReports(reports []binarychecker.BinaryReport) {
 	}
 
 	fmt.Printf("Binaries with systemcrypto: %d\n", systemcryptoCount)
+	fmt.Printf("Binaries with ms_nocgo_opensslcrypto: %d\n", opensslNoCGOCount)
 	fmt.Printf("Binaries that fail FIPS check: %d\n\n", failedCount)
 
 	// Print detailed report for each binary
@@ -70,11 +75,12 @@ func printReports(reports []binarychecker.BinaryReport) {
 		}
 		fmt.Printf("    CGO Enabled: %t\n", details.CGOEnabled)
 		fmt.Printf("    Uses Systemcrypto: %t\n", details.UseSystemcrypto)
+		fmt.Printf("    Uses OpensslNoCGO: %t\n", details.UseOpensslNoCGO)
 		fmt.Printf("    Fails on FIPS Check: %t\n", details.FailsOnFIPSCheck)
 
 		// Report FIPS status
-		if !details.UseSystemcrypto {
-			fmt.Printf("    ❌ FIPS Status: NOT COMPLIANT (systemcrypto not in use)\n")
+		if !details.UseSystemcrypto && !details.UseOpensslNoCGO {
+			fmt.Printf("    ❌ FIPS Status: NOT COMPLIANT (systemcrypto or ms_nocgo_opensslcrypto not in use)\n")
 		} else if details.FailsOnFIPSCheck {
 			fmt.Printf("    ❌ FIPS Status: NOT COMPLIANT (runtime check fails)\n")
 		} else if !hostFIPSCapable {

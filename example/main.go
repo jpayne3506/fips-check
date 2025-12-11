@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bahe-msft/fips-check"
+	fipscheck "github.com/bahe-msft/fips-check"
 )
 
 func main() {
@@ -41,6 +41,7 @@ func main() {
 		fmt.Printf("  Module: %s\n", details.Module)
 		fmt.Printf("  CGO Enabled: %t\n", details.CGOEnabled)
 		fmt.Printf("  Uses Systemcrypto: %t\n", details.UseSystemcrypto)
+		fmt.Printf("  Uses OpensslNoCGO: %t\n", details.UseOpensslNoCGO)
 		fmt.Printf("  Fails FIPS Check: %t\n", details.FailsOnFIPSCheck)
 
 		// Determine final FIPS compliance using SDK helper
@@ -50,8 +51,8 @@ func main() {
 		} else {
 			fmt.Printf("  ❌ FIPS Status: NOT COMPLIANT\n")
 			// Show why it's not compliant
-			if !details.UseSystemcrypto {
-				fmt.Printf("    Reason: Missing GOEXPERIMENT=systemcrypto\n")
+			if !details.UseSystemcrypto && !details.UseOpensslNoCGO {
+				fmt.Printf("    Reason: Missing GOEXPERIMENT=systemcrypto or or GOEXPERIMENT=ms_nocgo_opensslcrypto\n")
 			}
 			if !details.CGOEnabled {
 				fmt.Printf("    Reason: CGO not enabled\n")
