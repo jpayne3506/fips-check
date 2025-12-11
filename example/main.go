@@ -52,7 +52,7 @@ func main() {
 			fmt.Printf("  ❌ FIPS Status: NOT COMPLIANT\n")
 			// Show why it's not compliant
 			if !details.UseSystemcrypto && !details.UseOpensslNoCGO {
-				fmt.Printf("    Reason: Missing GOEXPERIMENT=systemcrypto or or GOEXPERIMENT=ms_nocgo_opensslcrypto\n")
+				fmt.Printf("    Reason: Missing GOEXPERIMENT=systemcrypto or GOEXPERIMENT=ms_nocgo_opensslcrypto\n")
 			}
 			if !details.CGOEnabled {
 				fmt.Printf("    Reason: CGO not enabled\n")
